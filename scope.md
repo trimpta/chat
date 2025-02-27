@@ -52,7 +52,7 @@ admin commands
 
 - /kick
 - /deletefile
-- /tellraw
+- /tellrawnb
 
 some server side features i wanna include this time are
 
