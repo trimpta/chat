@@ -1,10 +1,15 @@
+from __future__ import annotations
 import socket
 import threading
 import logging
 import sys
-import json
 import re
+from enum import Enum
 
+class MsgType(Enum):
+    MSG = "MSG"
+    CMD = "CMD"
+    ERR = "ERR"
 class Networking:
     ADDR = ('', 5906)
 
@@ -51,23 +56,59 @@ class User:
     def __init__(self, conn, addr):
         self.conn = conn
         self.addr = addr
+        self.nick = ""
+
+        if self.authenticate():
+            User.connected.append(self)
+
+    def close(self):
+        self.conn.close()
+        
+        try:
+            self.connected.remove(self)
+        except ValueError:
+            pass
+
+    def send(self, type: Enum, content: str) -> None:
+        self.conn.send(
+            (type.value + content).encode()
+        )
+        
+    def recv(self) -> tuple:
+        msg = self.conn.recv(1024).decode()
+        command_value, content = msg[:3], msg[3:]
 
         try:
-            self.authenticate()
-            User.connected.append(self)
-        except Exception as e:
-            raise
+            command = MsgType(command_value)
+        except ValueError:
+            self.close()
+            raise ValueError(f"Invalid command recieved from {self.nick}: {command_value}")
 
-    def send_text(self, message: str):
-        self.conn.send(message.encode())
 
-    def recv_text(self) -> str:
-        return self.conn.recv(1024).decode()
+        return command, content
+
 
     def authenticate(self):
         #Ask conn for nickname
-        self.send_text("NICK_PLS")
+
+        self.send(MsgType.CMD, "NICK_PLS")
+        type, nick = self.recv()
+
+        if type != MsgType.CMD:
+            self.conn.close()
+            return False
+
+        if re.fullmatch(self._valid_nick, nick) is None:
+            self.send(MsgType.ERR, "NICK_INVALID")
+            return False
+            
+        if nick in self.connected:
+            self.send(MsgType.ERR, "NICK_TAKEN")
+            return False
+
+        self.send(MsgType.CMD, "NICK_OK")
+        self.nick = nick
+
+        return True
 
         
-
-

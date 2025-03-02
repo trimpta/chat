@@ -57,3 +57,5 @@ admin commands
 some server side features i wanna include this time are
 
 - proper logging of messages and events
+
+i think i'll go with plain text encoded messages bw server and clients. something like `MSGHello Guys!!` and `CMDWHISP user1,user2 i think user3 is crazy!`
