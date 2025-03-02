@@ -10,6 +10,7 @@ class MsgType(Enum):
     MSG = "MSG"
     CMD = "CMD"
     ERR = "ERR"
+
 class Networking:
     ADDR = ('', 5906)
 
@@ -36,8 +37,10 @@ class Networking:
 
 class User:
 
+    done = False
     connected = []
     _valid_nick = re.compile(r"^[A-Za-z0-9\-_\.]{3,20}$")
+    seperator = ": "
 
     def __contains__(self, user: str | User) -> bool:
         
@@ -60,6 +63,14 @@ class User:
 
         if self.authenticate():
             User.connected.append(self)
+
+    def broadcast_msg(self, content: str):
+
+        for user in User.connected:
+            if user != self:
+                user.send(
+                    f"{self.nick} :{content}".encode()
+                )
 
     def close(self):
         self.conn.close()
@@ -94,7 +105,7 @@ class User:
         self.send(MsgType.CMD, "NICK_PLS")
         type, nick = self.recv()
 
-        if type != MsgType.CMD:
+        if type is not MsgType.CMD:
             self.conn.close()
             return False
 
@@ -111,4 +122,23 @@ class User:
 
         return True
 
+    def handle_cmd(self, val: str):
         
+        command, *content = val.split()
+        content = ' '.join(content)
+
+
+        
+        
+
+    def run(self):
+        
+        while not self.done:
+
+            type, msg = self.recv()
+
+            if type is MsgType.CMD:
+                self.handle_cmd(msg)
+
+            if type is MsgType.MSG:
+                self.broadcast_msg(msg)
