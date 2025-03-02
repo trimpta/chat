@@ -35,12 +35,14 @@ class Networking:
                 raise
         
 
+
 class User:
 
     done = False
     connected = []
+    commands = {}
     _valid_nick = re.compile(r"^[A-Za-z0-9\-_\.]{3,20}$")
-    seperator = ": "
+    seperator = " :"
 
     def __contains__(self, user: str | User) -> bool:
         
@@ -61,7 +63,8 @@ class User:
         self.addr = addr
         self.nick = ""
 
-        if self.authenticate():
+        #get_nick returns True on success
+        if self.get_nick():
             User.connected.append(self)
 
     def broadcast_msg(self, content: str):
@@ -69,7 +72,7 @@ class User:
         for user in User.connected:
             if user != self:
                 user.send(
-                    f"{self.nick} :{content}".encode()
+                    f"{self.nick}{User.seperator}{content}".encode()
                 )
 
     def close(self):
@@ -84,7 +87,12 @@ class User:
         self.conn.send(
             (type.value + content).encode()
         )
-        
+
+    def whisper(self, message: str, sender: User | None = None) -> None:
+
+        prefix = sender.nick + User.seperator if sender is not None else ''
+        self.send(MsgType.MSG, prefix + message)
+
     def recv(self) -> tuple:
         msg = self.conn.recv(1024).decode()
         command_value, content = msg[:3], msg[3:]
@@ -99,7 +107,7 @@ class User:
         return command, content
 
 
-    def authenticate(self):
+    def get_nick(self):
         #Ask conn for nickname
 
         self.send(MsgType.CMD, "NICK_PLS")
