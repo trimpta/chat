@@ -11,6 +11,24 @@ class MsgType(Enum):
     CMD = "CMD"
     ERR = "ERR"
 
+class commands:
+    list = {}
+
+    @classmethod 
+    def register(cls, func, command, desc):
+        cls.list[command] = [func, desc]
+
+    @classmethod
+    def use(cls, command, *args, **kwags):
+
+        if command not in cls.list:
+            raise ValueError(f"Invalid command: {command}")
+        
+        return cls.list[command][0](*args, **kwags)
+
+commands.register(print, "/print", "print stuff to stdout")
+commands.use("/print", "hsab gay")
+
 class Networking:
     ADDR = ('', 5906)
 
@@ -33,8 +51,6 @@ class Networking:
                 user = User(conn, addr)
             except Exception as e:
                 raise
-        
-
 
 class User:
 
