@@ -26,8 +26,6 @@ class commands:
         
         return cls.list[command][0](*args, **kwags)
 
-commands.register(print, "/print", "print stuff to stdout")
-commands.use("/print", "hsab gay")
 
 class Networking:
     ADDR = ('', 5906)
